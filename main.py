@@ -3,7 +3,7 @@ import os
 import requests
 import pandas as pd
 from time import sleep
-from config import leagues
+from config import leagues, stats_a
 from bs4 import BeautifulSoup
 
 def main() -> None:
@@ -13,11 +13,14 @@ def main() -> None:
         player_list = get_players(league_url)
         print(f"{len(player_list)} players found")
         for player in player_list.items():
-            player_name = player[1]['player_name']
-            player_id = player[1]['player_id']
-            print(f"{player[0]} / {len(player_list)}: {player_name}")
-            matches = get_player_matches(player_id, player_name)
-            write_to_pkl(games=matches, league=league[0], player_name=player_name, player_id=player_id)
+            print(player)
+            for stat in stats_a:
+                print(stat)
+                player_name = player[1]['player_name']
+                player_id = player[1]['player_id']
+                # print(f"{player[0]} / {len(player_list)}: {player_name}")
+                matches = get_player_matches(player_id, player_name)
+                write_to_pkl(games=matches, league=league[0], player_name=player_name, player_id=player_id)
 
 def get_players(url: str) -> dict:
     """
@@ -34,7 +37,7 @@ def get_players(url: str) -> dict:
     """
     req = get_request(url=url)
     print(f"Getting player list: {req}")
-    comm = re.compile("<!--|-->") #Removes comments from HTML
+    comm = re.compile("<!--|-->") # Removes comments from HTML
     soup = BeautifulSoup(comm.sub("", req.text), 'lxml')
     td = soup.find_all('td')
 
@@ -57,6 +60,7 @@ def get_player_matches(id: str, player_name: str) -> dict:
 
     Args:
         id (str): Corresponding player's ID
+        stat (str): Corresponsing FBRef stats page
         player_name (str): Corresponding player's name
 
     Returns:
@@ -126,11 +130,6 @@ def get_request(url: str) -> dict:
 
 
 def write_to_pkl(games: dict, league: str, player_name: str, player_id: str) -> None:
-    '''
-    Takes dict of games converts them into pandas dataframes, adds them to
-    dictionary, take the values from dict and adds them to list to then be
-    concatenated by pd.concat and wrote to .pkl file
-    '''
     df_dict = {}
     for index, (year, df) in enumerate(games.items()):
         data = pd.DataFrame.from_dict(df, 'index')

@@ -7,6 +7,13 @@ leagues = {
     "Lique 1": "https://fbref.com/en/comps/13/stats/Ligue-1-Stats#all_stats_standard",
 }
 
-stats = {
-
-}
+stats_a = [
+    "Goalkeeping"
+    "summary",
+    "passing",
+    "passing_types",
+    "gca", # Goal and shot creation
+    "defense",
+    "possession",
+    "misc" # Miscellaneous stats
+]
