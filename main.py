@@ -3,24 +3,31 @@ import os
 import requests
 import pandas as pd
 from time import sleep
-from config import leagues, stats_a
+from config import leagues, stats
 from bs4 import BeautifulSoup
 
 def main() -> None:
     for league in leagues.items():
-        print(f"{league[0]}")
         league_url = league[1]
         player_list = get_players(league_url)
-        print(f"{len(player_list)} players found")
+        print(f"{league[0]}: {len(player_list)} players found")
         for player in player_list.items():
-            print(player)
-            for stat in stats_a:
-                print(stat)
+            for stat in stats:
                 player_name = player[1]['player_name']
                 player_id = player[1]['player_id']
-                # print(f"{player[0]} / {len(player_list)}: {player_name}")
-                matches = get_player_matches(player_id, player_name)
-                write_to_pkl(games=matches, league=league[0], player_name=player_name, player_id=player_id)
+                print(f"{player[0]} / {len(player_list)}: {player_name}")
+                matches = get_player_matches(player_id, player_name, stat)
+
+                dict_to_write = {
+                    "matches": matches,
+                    "stat": stat,
+                    "league": league[0],
+                    "player": player_name,
+                    "player_id": player_id
+                    }
+
+                write_to_pkl(dict_to_write)
+
 
 def get_players(url: str) -> dict:
     """
@@ -53,7 +60,7 @@ def get_players(url: str) -> dict:
 
     return dict_player_name_id
 
-def get_player_matches(id: str, player_name: str) -> dict:
+def get_player_matches(id: str, player_name: str, stat: str) -> dict:
     """
     Takes a player ID and name and returns a dict of the corresponding player's games by
     year
@@ -76,10 +83,10 @@ def get_player_matches(id: str, player_name: str) -> dict:
 
     dict_game_stats = {}
     for year in seasons:
-        url = f"https://fbref.com/en/players/{id}/matchlogs/{year}/misc/"
+        url = f"https://fbref.com/en/players/{id}/matchlogs/{year}/{stat}/"
         req = get_request(url=url)
         #print(f"Requesting match log for {year}: {req}")
-        comm = re.compile("<!--|-->") #Removes comments from HTML
+        comm = re.compile("<!--|-->") # Removes comments from HTML
         soup = BeautifulSoup(comm.sub("",req.text), 'lxml')
         td = soup.find_all('td')
         tr = soup.find_all('th')
@@ -112,7 +119,6 @@ def get_player_matches(id: str, player_name: str) -> dict:
 
     return dict_game_stats
 
-
 def get_request(url: str) -> dict:
     try:
         response = requests.get(url)
@@ -128,14 +134,24 @@ def get_request(url: str) -> dict:
         print(f"An error occurred: {e}")
     return None
 
+def write_to_pkl(to_write: dict) -> None:
+    """
+    Takes a dictionary of matches and writes them to a .pkl file in their corresponding directory
 
-def write_to_pkl(games: dict, league: str, player_name: str, player_id: str) -> None:
+    Args:
+        to_write (dict): A dictionary containing the match data to be written to a .pkl file. The dictionary
+                         should include keys for 'matches', 'stat', 'league', 'player', and 'player_id'.
+
+    """
     df_dict = {}
-    for index, (year, df) in enumerate(games.items()):
+    for index, (year, df) in enumerate(to_write["matches"].items()):
         data = pd.DataFrame.from_dict(df, 'index')
         df_dict[index] = data
 
-    path = os.path.join("Player-Data", league, f"{player_name}-{player_id}.pkl")
+    path = os.path.join(
+        "Player-Data", to_write["stat"], to_write["league"], f"{to_write['player']}-{to_write['player_id']}.pkl"
+        )
+
     directory = os.path.dirname(path)
     os.makedirs(directory, exist_ok=True)
 
