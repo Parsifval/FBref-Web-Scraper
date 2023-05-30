@@ -12,12 +12,12 @@ def main() -> None:
         player_list = get_players(league_url)
         print(f"{league[0]}: {len(player_list)} players found")
         for player in player_list.items():
+            print(f"{player[0]} / {len(player_list)}: {player[1]['player_name']}")
             for stat in stats:
                 player_name = player[1]['player_name']
                 player_id = player[1]['player_id']
-                print(f"{player[0]} / {len(player_list)}: {player_name}")
+                #print(f"{player[0]} / {len(player_list)}: {player_name}")
                 matches = get_player_matches(player_id, player_name, stat)
-
                 dict_to_write = {
                     "matches": matches,
                     "stat": stat,
@@ -60,6 +60,7 @@ def get_players(url: str) -> dict:
 
     return dict_player_name_id
 
+
 def get_player_matches(id: str, player_name: str, stat: str) -> dict:
     """
     Takes a player ID and name and returns a dict of the corresponding player's games by
@@ -77,19 +78,25 @@ def get_player_matches(id: str, player_name: str, stat: str) -> dict:
         {"2023": {"0": { "aerials_lost": "0", "aerials_won": "1", ...}}}
     """
     seasons = [
-            '2023', #'2022', '2021', '2020', '2019', '2018', '2017',
-           # '2016', '2015', '2014', '2013', '2012', '2011', '2010',
+            '2023', '2022', '2021', '2020', '2019', '2018', #'2017',
+            #'2016', '2015'
             ] #Which seasons to include
 
     dict_game_stats = {}
     for year in seasons:
         url = f"https://fbref.com/en/players/{id}/matchlogs/{year}/{stat}/"
-        req = get_request(url=url)
-        #print(f"Requesting match log for {year}: {req}")
-        comm = re.compile("<!--|-->") # Removes comments from HTML
-        soup = BeautifulSoup(comm.sub("",req.text), 'lxml')
-        td = soup.find_all('td')
-        tr = soup.find_all('th')
+        try:
+            req = get_request(url=url)
+            #print(f"Requesting match log for {year}: {req}")
+            comm = re.compile("<!--|-->") # Removes comments from HTML
+            soup = BeautifulSoup(comm.sub("",req.text), 'lxml')
+            td = soup.find_all('td')
+            tr = soup.find_all('th')
+
+        except AttributeError as e:
+            print(f"EXCEPTION: {e}")
+            write_error_log(e)
+            continue
 
         year_game_stats = {}
         sub_dict = {}
@@ -119,7 +126,14 @@ def get_player_matches(id: str, player_name: str, stat: str) -> dict:
 
     return dict_game_stats
 
-def get_request(url: str) -> dict:
+
+def get_request(url: str):
+    """
+    Sends a GET request to a given URL
+
+    Args:
+        url (str): URL to which the get request is sent
+    """
     try:
         response = requests.get(url)
         response.raise_for_status()
@@ -133,6 +147,7 @@ def get_request(url: str) -> dict:
     except requests.exceptions.RequestException as e:
         print(f"An error occurred: {e}")
     return None
+
 
 def write_to_pkl(to_write: dict) -> None:
     """
@@ -157,6 +172,11 @@ def write_to_pkl(to_write: dict) -> None:
 
     complete_player_data = pd.concat(df_dict.values())
     complete_player_data.to_pickle(path)
+
+def write_error_log(error: str):
+    with open('error.txt', 'a') as file:
+        file.write(error)
+
 
 if __name__ == '__main__':
     main()

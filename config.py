@@ -8,12 +8,12 @@ leagues = {
 }
 
 stats = [
-    "keeper",
-    "summary",
-    "passing",
-    "passing_types",
-    "gca", # Goal and shot creation
+    #"keeper",
+    #"summary",
+    #"passing",
+    #"passing_types",
+    #"gca", # Goal and shot creation
     "defense",
-    "possession",
+    #"possession",
     "misc" 
 ]
