@@ -85,18 +85,15 @@ def get_player_matches(id: str, player_name: str, stat: str) -> dict:
     dict_game_stats = {}
     for year in seasons:
         url = f"https://fbref.com/en/players/{id}/matchlogs/{year}/{stat}/"
-        try:
-            req = get_request(url=url)
-            #print(f"Requesting match log for {year}: {req}")
-            comm = re.compile("<!--|-->") # Removes comments from HTML
-            soup = BeautifulSoup(comm.sub("",req.text), 'lxml')
-            td = soup.find_all('td')
-            tr = soup.find_all('th')
-
-        except AttributeError as e:
-            print(f"EXCEPTION: {e}")
-            write_error_log(e)
+        req = get_request(url=url)
+        if req is None:
             continue
+
+        #print(f"Requesting match log for {year}: {req}")
+        comm = re.compile("<!--|-->") # Removes comments from HTML
+        soup = BeautifulSoup(comm.sub("",req.text), 'lxml')
+        td = soup.find_all('td')
+        tr = soup.find_all('th')
 
         year_game_stats = {}
         sub_dict = {}
@@ -121,7 +118,7 @@ def get_player_matches(id: str, player_name: str, stat: str) -> dict:
                 sub_dict = {}
                 i += 1
 
-        sleep(4)
+        sleep(5)
         dict_game_stats[year] = year_game_stats
 
     return dict_game_stats
@@ -134,18 +131,26 @@ def get_request(url: str):
     Args:
         url (str): URL to which the get request is sent
     """
-    try:
-        response = requests.get(url)
-        response.raise_for_status()
-        return response
-    except requests.exceptions.HTTPError as e:
-        print(f"HTTP error occurred: {e}")
-    except requests.exceptions.ConnectionError as e:
-        print(f"Connection error occurred: {e}")
-    except requests.exceptions.Timeout as e:
-        print(f"Timeout error occurred: {e}")
-    except requests.exceptions.RequestException as e:
-        print(f"An error occurred: {e}")
+    retries = 0
+    while retries < 5:
+        try:
+            response = requests.get(url)
+            response.raise_for_status()
+            return response
+        except requests.exceptions.HTTPError as e:
+            print(f"HTTP error occurred: {e}")
+        except requests.exceptions.ConnectionError as e:
+            print(f"Connection error occurred: {e}")
+        except requests.exceptions.Timeout as e:
+            print(f"Timeout error occurred: {e}")
+        except requests.exceptions.RequestException as e:
+            print(f"An error occurred: {e}")
+        except Exception as e:
+            print(f"An unknown error occurred: {e}")
+        retries += 1
+        sleep(3)
+    
+    print("Max retries reached")
     return None
 
 
