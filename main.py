@@ -16,7 +16,6 @@ def main() -> None:
             for stat in stats:
                 player_name = player[1]['player_name']
                 player_id = player[1]['player_id']
-                #print(f"{player[0]} / {len(player_list)}: {player_name}")
                 matches = get_player_matches(player_id, player_name, stat)
                 dict_to_write = {
                     "matches": matches,
@@ -29,7 +28,7 @@ def main() -> None:
                 write_to_pkl(dict_to_write)
 
 
-def get_players(url: str) -> dict:
+def get_players(urls: list) -> dict:
     """
     Gets a list of players for a given league
 
@@ -42,21 +41,33 @@ def get_players(url: str) -> dict:
     Example:
         {0: {'player_name': 'Name', 'player_id': 'id'}}
     """
-    req = get_request(url=url)
-    print(f"Getting player list: {req}")
-    comm = re.compile("<!--|-->") # Removes comments from HTML
-    soup = BeautifulSoup(comm.sub("", req.text), 'lxml')
-    td = soup.find_all('td')
-
     dict_player_name_id = {}
-    k = 0
-    for cell in td:
-        if cell.attrs['data-stat'] == 'player':
-            player_name = cell.attrs['csk']
-            player_id = cell.attrs['data-append-csv']
-            dict_player_name_id[k] = {'player_name' : player_name,
-                                      'player_id' : player_id}
-            k += 1
+
+    def is_new_player(player_name, player_id):
+        return not any(
+            player['player_name'] == player_name and player['player_id'] == player_id for player in dict_player_name_id.values()
+            )
+
+    for url in urls:
+        print(url)
+        req = get_request(url)
+        comm = re.compile("<!--|-->") # Removes comments from HTML
+        soup = BeautifulSoup(comm.sub("", req.text), 'lxml')
+        td = soup.find_all('td')
+        print(f"Getting player list: {req}")
+        k = 0
+        for cell in td:
+            if cell.attrs['data-stat'] == 'player':
+                player_name = cell.attrs['csk']
+                player_id = cell.attrs['data-append-csv']
+
+                if is_new_player(player_name, player_id):
+                    dict_player_name_id[k] =  {
+                        'player_name' : player_name,
+                        'player_id' : player_id
+                        }
+
+                    k += 1
 
     return dict_player_name_id
 
@@ -78,15 +89,15 @@ def get_player_matches(id: str, player_name: str, stat: str) -> dict:
         {"2023": {"0": { "aerials_lost": "0", "aerials_won": "1", ...}}}
     """
     seasons = [
-            '2023', '2022', '2021', '2020', '2019', '2018', #'2017',
-            #'2016', '2015'
+            '2023', '2022', '2021', '2020', '2019', '2018', '2017',
+            '2016', '2015'
             ] #Which seasons to include
 
     dict_game_stats = {}
     for year in seasons:
         url = f"https://fbref.com/en/players/{id}/matchlogs/{year}/{stat}/"
         req = get_request(url=url)
-        if req is None:
+        if req is None: #If get_request() cannot return response it will return a None value
             continue
 
         #print(f"Requesting match log for {year}: {req}")
@@ -118,7 +129,7 @@ def get_player_matches(id: str, player_name: str, stat: str) -> dict:
                 sub_dict = {}
                 i += 1
 
-        sleep(5)
+        sleep(3)
         dict_game_stats[year] = year_game_stats
 
     return dict_game_stats
@@ -152,7 +163,7 @@ def get_request(url: str):
     
     print("Max retries reached")
     return None
-
+    
 
 def write_to_pkl(to_write: dict) -> None:
     """
@@ -178,11 +189,6 @@ def write_to_pkl(to_write: dict) -> None:
     complete_player_data = pd.concat(df_dict.values())
     complete_player_data.to_pickle(path)
 
-def write_error_log(error: str):
-    with open('error.txt', 'a') as file:
-        file.write(error)
-
 
 if __name__ == '__main__':
     main()
-

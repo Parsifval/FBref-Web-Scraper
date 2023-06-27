@@ -1,19 +1,27 @@
 leagues = {
-    # Comment leagues you wish to exclude
-    "Premier League": "https://fbref.com/en/comps/9/stats/Premier-League-Stats",
-    "La Liga": "https://fbref.com/en/comps/12/stats/La-Liga-Stats#all_stats_standard",
-    "Serie A": "https://fbref.com/en/comps/11/stats/Serie-A-Stats",
-    "Bundesliga": "https://fbref.com/en/comps/20/stats/Bundesliga-Stats#all_stats_standard",
-    "Lique 1": "https://fbref.com/en/comps/13/stats/Ligue-1-Stats#all_stats_standard",
+    "Premier League": [
+        "https://fbref.com/en/comps/9/2022-2023/stats/2022-2023-Premier-League-Stats"
+        "https://fbref.com/en/comps/9/2021-2022/stats/2021-2022-Premier-League-Stats",
+        "https://fbref.com/en/comps/9/2020-2021/stats/2020-2021-Premier-League-Stats",
+        "https://fbref.com/en/comps/9/2019-2020/stats/2019-2020-Premier-League-Stats",
+        "https://fbref.com/en/comps/9/2018-2019/stats/2018-2019-Premier-League-Stats",
+        "https://fbref.com/en/comps/9/2017-2018/stats/2017-2018-Premier-League-Stats",
+        "https://fbref.com/en/comps/9/2016-2017/stats/2016-2017-Premier-League-Stats",
+        "https://fbref.com/en/comps/9/2015-2016/stats/2015-2016-Premier-League-Stats"
+        ],
 }
+
 
 stats = [
     #"keeper",
     #"summary",
     #"passing",
     #"passing_types",
-    #"gca", # Goal and shot creation
+    #"gca", 
     "defense",
-    #"possession",
+    "possession",
     "misc" 
 ]
+
+
+
