@@ -6,7 +6,7 @@ from time import sleep
 from config import leagues, stats
 from bs4 import BeautifulSoup
 
-def main() -> None:
+def main():
     for league in leagues.items():
         league_url = league[1]
         player_list = get_players(league_url)
@@ -49,14 +49,13 @@ def get_players(urls: list) -> dict:
             )
 
     for url in urls:
-        print(url)
         req = get_request(url)
         comm = re.compile("<!--|-->") # Removes comments from HTML
         soup = BeautifulSoup(comm.sub("", req.text), 'lxml')
         td = soup.find_all('td')
-        print(f"Getting player list: {req}")
         k = 0
         for cell in td:
+            print(cell)
             if cell.attrs['data-stat'] == 'player':
                 player_name = cell.attrs['csk']
                 player_id = cell.attrs['data-append-csv']
@@ -97,7 +96,7 @@ def get_player_matches(id: str, player_name: str, stat: str) -> dict:
     for year in seasons:
         url = f"https://fbref.com/en/players/{id}/matchlogs/{year}/{stat}/"
         req = get_request(url=url)
-        if req is None: #If get_request() cannot return response it will return a None value
+        if req is None: # If get_request() cannot return response it will return a None value
             continue
 
         #print(f"Requesting match log for {year}: {req}")
@@ -143,6 +142,7 @@ def get_request(url: str):
         url (str): URL to which the get request is sent
     """
     retries = 0
+    sleep_time = 3
     while retries < 5:
         try:
             response = requests.get(url)
@@ -159,7 +159,8 @@ def get_request(url: str):
         except Exception as e:
             print(f"An unknown error occurred: {e}")
         retries += 1
-        sleep(3)
+        sleep(sleep_time)
+        sleep_time = sleep_time * 3
     
     print("Max retries reached")
     return None
