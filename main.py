@@ -3,7 +3,7 @@ import os
 import requests
 import pandas as pd
 from time import sleep
-from config import leagues, stats
+from config import leagues, seasons, stats
 from bs4 import BeautifulSoup
 
 def main():
@@ -55,7 +55,6 @@ def get_players(urls: list) -> dict:
         td = soup.find_all('td')
         k = 0
         for cell in td:
-            print(cell)
             if cell.attrs['data-stat'] == 'player':
                 player_name = cell.attrs['csk']
                 player_id = cell.attrs['data-append-csv']
@@ -87,11 +86,6 @@ def get_player_matches(id: str, player_name: str, stat: str) -> dict:
     Example:
         {"2023": {"0": { "aerials_lost": "0", "aerials_won": "1", ...}}}
     """
-    seasons = [
-            '2023', '2022', '2021', '2020', '2019', '2018', '2017',
-            '2016', '2015'
-            ] #Which seasons to include
-
     dict_game_stats = {}
     for year in seasons:
         url = f"https://fbref.com/en/players/{id}/matchlogs/{year}/{stat}/"
