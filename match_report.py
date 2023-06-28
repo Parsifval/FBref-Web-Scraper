@@ -9,6 +9,7 @@ def main():
     for league in leagues_match_report.items():
         league_urls = league[1]
         match_list = get_matches(league_urls)
+        get_match_report(match_list)
 
 
 def get_matches(urls) -> list:
@@ -30,7 +31,55 @@ def get_matches(urls) -> list:
     return url_list
 
 
-def get_match_report(url):
+def get_match_report(urls: list):
+    for url in urls:
+        req = requests.get(f"https://fbref.com{url}")
+        comm = re.compile("<!--|-->")
+        soup = BeautifulSoup(comm.sub("", req.text), 'lxml')
+        score_box_divs = soup.find_all('div', class_='scorebox')
+        team_stats_divs = soup.find_all('div', id='team_stats')
+
+        for div in score_box_divs:
+            scores = soup.find_all('div', class_='score')
+            score_list = []
+            for score in scores:
+                score_list.append(score.getText())
+
+            referee_div = div.find('strong', string='Officials').find_next_sibling('small')
+            referee_span = referee_div.find('span') if referee_div else None
+            referee = referee_span.getText()
+            referee = referee.replace(" (Referee)", "")
+
+            span = div.find('span', class_='venuetime')
+            if span and 'data-venue-date' in span.attrs:
+                venue_date = span['data-venue-date']
+            else:
+                venue_date = None
+
+            teams_link = div.find('a', string=re.compile('Historical Head-to-Head'))
+            if teams_link:
+                teams = teams_link.text.split(' vs. ')
+                if len(teams) == 2:  # Make sure we actually have two teams
+                    home_team = teams[0]
+                    opponent = teams[1].replace(' Historical Head-to-Head', '')  # Remove ' Historical Head-to-Head' from the second team's name
+            else:
+                home_team, opponent = None, None
+
+        for div in team_stats_divs:
+            strongs = div.find_all('strong')[:4]
+            home_possession = strongs[0].getText()
+            away_possession = strongs[1].getText()
+
+        sub_dict = {
+            "date": venue_date, "home_team": home_team, "away_team": opponent,
+            "referee": referee, "home_possession": home_possession, "away_possession": away_possession
+            }
+
+        print(sub_dict)
+        sleep(3)
+
+
+
     pass
 
 
