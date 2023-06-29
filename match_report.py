@@ -1,18 +1,31 @@
 import re
+import os
 import requests
+import pandas as pd
+
 from time import sleep
 from bs4 import BeautifulSoup
-
 from config import leagues_match_report
 
 def main():
     for league in leagues_match_report.items():
         league_urls = league[1]
         match_list = get_matches(league_urls)
-        get_match_report(match_list)
+        match_report = get_match_report(match_list)
+
+        dict_to_write = {
+            "match_reports": match_report,
+            "league": league[0]
+        }
+
+        write_to_pkl(dict_to_write)
 
 
-def get_matches(urls) -> list:
+def get_matches(urls: list) -> list:
+    """
+    Iterates over a list of URLs, makes GET requests to each URL, parses the HTML,
+    and extracts links to match reports.
+    """
     url_list = []
     for url in urls:
         req = get_request(url)
@@ -27,11 +40,19 @@ def get_matches(urls) -> list:
                 link = a_tag.get('href') if a_tag else None # Gets the href attribute from the <a> tag, if it exists
                 if link is not None:
                     url_list.append(link)
+                    
+        sleep(3)
 
     return url_list
 
 
-def get_match_report(urls: list):
+def get_match_report(urls: list) -> list:
+    """
+    Iterates over a list of URLs, makes GET requests to each URL, parses the HTML
+    and extracts specific match report  information from the webpage, including
+    the date, home team, away team, and referee.
+    """
+    match_dict_list = []
     for url in urls:
         req = requests.get(f"https://fbref.com{url}")
         comm = re.compile("<!--|-->")
@@ -65,22 +86,26 @@ def get_match_report(urls: list):
             else:
                 home_team, opponent = None, None
 
-        for div in team_stats_divs:
-            strongs = div.find_all('strong')[:4]
-            home_possession = strongs[0].getText()
-            away_possession = strongs[1].getText()
+        # for div in team_stats_divs:
+        #     strongs = div.find_all('strong')[:4]
+        #     home_possession = strongs[0].getText()
+        #     away_possession = strongs[1].getText()
 
-        sub_dict = {
-            "date": venue_date, "home_team": home_team, "away_team": opponent,
-            "referee": referee, "home_possession": home_possession, "away_possession": away_possession
+        match_dict = {
+            "date": venue_date,
+            "home_team": home_team,
+            "away_team": opponent,
+            "home_score": score_list[0],
+            "away_score": score_list[1],
+            "referee": referee
             }
 
-        print(sub_dict)
+        match_dict_list.append(match_dict)
         sleep(3)
 
+        print(match_dict)
 
-
-    pass
+    return match_dict_list
 
 
 def get_request(url: str):
@@ -113,7 +138,15 @@ def get_request(url: str):
     
     print("Max retries reached")
     return None
-    
+
+
+def write_to_pkl(to_write: dict) -> None:
+    data = pd.DataFrame(to_write["match_reports"])
+    path = os.path.join("Match-Reports", f"{to_write['league']}-match_reports.pkl")
+    directory = os.path.dirname(path)
+    os.makedirs(directory, exist_ok=True)
+    data.to_pickle(path) 
+
 
 if __name__ == '__main__':
     main()
