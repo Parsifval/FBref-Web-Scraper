@@ -17,6 +17,10 @@ def main():
                 player_name = player[1]['player_name']
                 player_id = player[1]['player_id']
                 matches = get_player_matches(player_id, player_name, stat)
+
+                if not matches: # Checks if matches is empty before proceeding
+                    continue
+
                 dict_to_write = {
                     "matches": matches,
                     "stat": stat,
