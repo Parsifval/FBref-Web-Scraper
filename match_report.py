@@ -9,9 +9,10 @@ from config import leagues_match_report
 
 def main():
     for league in leagues_match_report.items():
-        print(league)
+        print(league[0])
         league_urls = league[1]
         match_list = get_matches(league_urls)
+        write_to_pkl(match_list, league[0])
 
 def get_matches(urls: list) -> dict:
     """
@@ -57,8 +58,9 @@ def get_matches(urls: list) -> dict:
                 k += 1
                 sub_dict = {"Date": None, "Home": None, "Score": None, "Away": None, "Referee": None}
 
-        print(matches)
         sleep(3)
+    
+    return matches
 
 
 def get_request(url: str):
@@ -92,13 +94,13 @@ def get_request(url: str):
     print("Max retries reached")
     return None
 
-
-def write_to_pkl(to_write: dict) -> None:
-    data = pd.DataFrame(to_write["match_reports"])
-    path = os.path.join("Match-Reports", f"{to_write['league']}-match_reports.pkl")
+def write_to_pkl(to_write: dict, league: str) -> None:
+    data = pd.DataFrame(to_write.values())
+    print(data.head())
+    path = os.path.join("Match-Reports", f"{league}-match_reports.pkl")
     directory = os.path.dirname(path)
     os.makedirs(directory, exist_ok=True)
-    data.to_pickle(path) 
+    data.to_pickle(path)
 
 
 if __name__ == '__main__':
