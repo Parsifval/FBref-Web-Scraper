@@ -9,103 +9,56 @@ from config import leagues_match_report
 
 def main():
     for league in leagues_match_report.items():
+        print(league)
         league_urls = league[1]
         match_list = get_matches(league_urls)
-        match_report = get_match_report(match_list)
 
-        dict_to_write = {
-            "match_reports": match_report,
-            "league": league[0]
-        }
-
-        write_to_pkl(dict_to_write)
-
-
-def get_matches(urls: list) -> list:
+def get_matches(urls: list) -> dict:
     """
     Iterates over a list of URLs, makes GET requests to each URL, parses the HTML,
     and extracts links to match reports.
     """
-    url_list = []
+    matches = {}
     for url in urls:
         req = get_request(url)
         req = requests.get(url)
-        comm = re.compile("<!--|-->")
+        comm = re.compile("<!--|-->") # Not sure if this is necessary here
         soup = BeautifulSoup(comm.sub("", req.text), 'lxml')
         td = soup.find_all('td')
 
+        k = 0
+        sub_dict = {"Date": None, "Home": None, "Score": None, "Away": None, "Referee": None}
         for cell in td:
-            if cell.attrs['data-stat'] == "match_report":
+            if cell.attrs['data-stat'] == "home_team":
                 a_tag = cell.find('a')
-                link = a_tag.get('href') if a_tag else None # Gets the href attribute from the <a> tag, if it exists
-                if link is not None:
-                    url_list.append(link)
-                    
+                if a_tag is not None:
+                    sub_dict["Home"] = a_tag.text
+
+            if cell.attrs['data-stat'] == "away_team":
+                a_tag = cell.find('a')
+                if a_tag is not None:
+                    sub_dict["Away"] = a_tag.text
+
+            if cell.attrs['data-stat'] == "score":
+                a_tag = cell.find('a')
+                if a_tag is not None:
+                    sub_dict["Score"] = a_tag.text
+
+            if cell.attrs['data-stat'] == "date":
+                a_tag = cell.find('a')
+                if a_tag is not None:
+                    sub_dict["Date"] = a_tag.text
+            
+            if cell.attrs['data-stat'] == "referee":
+                sub_dict["Referee"] = cell.text
+
+            if all(sub_dict.values()):
+                matches[k] = sub_dict
+                k += 1
+                sub_dict = {"Date": None, "Home": None, "Score": None, "Away": None, "Referee": None}
+
+        print(matches)
         sleep(3)
-
-    return url_list
-
-
-def get_match_report(urls: list) -> list:
-    """
-    Iterates over a list of URLs, makes GET requests to each URL, parses the HTML
-    and extracts specific match report  information from the webpage, including
-    the date, home team, away team, and referee.
-    """
-    match_dict_list = []
-    for url in urls:
-        req = requests.get(f"https://fbref.com{url}")
-        comm = re.compile("<!--|-->")
-        soup = BeautifulSoup(comm.sub("", req.text), 'lxml')
-        score_box_divs = soup.find_all('div', class_='scorebox')
-        team_stats_divs = soup.find_all('div', id='team_stats')
-
-        for div in score_box_divs:
-            scores = soup.find_all('div', class_='score')
-            score_list = []
-            for score in scores:
-                score_list.append(score.getText())
-
-            referee_div = div.find('strong', string='Officials').find_next_sibling('small')
-            referee_span = referee_div.find('span') if referee_div else None
-            referee = referee_span.getText()
-            referee = referee.replace(" (Referee)", "")
-
-            span = div.find('span', class_='venuetime')
-            if span and 'data-venue-date' in span.attrs:
-                venue_date = span['data-venue-date']
-            else:
-                venue_date = None
-
-            teams_link = div.find('a', string=re.compile('Historical Head-to-Head'))
-            if teams_link:
-                teams = teams_link.text.split(' vs. ')
-                if len(teams) == 2:  # Make sure we actually have two teams
-                    home_team = teams[0]
-                    opponent = teams[1].replace(' Historical Head-to-Head', '')  # Remove ' Historical Head-to-Head' from the second team's name
-            else:
-                home_team, opponent = None, None
-
-        # for div in team_stats_divs:
-        #     strongs = div.find_all('strong')[:4]
-        #     home_possession = strongs[0].getText()
-        #     away_possession = strongs[1].getText()
-
-        match_dict = {
-            "date": venue_date,
-            "home_team": home_team,
-            "away_team": opponent,
-            "home_score": score_list[0],
-            "away_score": score_list[1],
-            "referee": referee
-            }
-
-        match_dict_list.append(match_dict)
-        sleep(3)
-
-        print(match_dict)
-
-    return match_dict_list
 
 
 def get_request(url: str):

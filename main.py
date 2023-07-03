@@ -2,9 +2,10 @@ import re
 import os
 import requests
 import pandas as pd
+
 from time import sleep
-from config import leagues, seasons, stats
 from bs4 import BeautifulSoup
+from config import leagues, seasons, stats
 
 def main():
     for league in leagues.items():
@@ -60,16 +61,20 @@ def get_players(urls: list) -> dict:
         k = 0
         for cell in td:
             if cell.attrs['data-stat'] == 'player':
-                player_name = cell.attrs['csk']
-                player_id = cell.attrs['data-append-csv']
+                try:
+                    player_name = cell.attrs['csk']
+                    player_id = cell.attrs['data-append-csv']
 
-                if is_new_player(player_name, player_id):
-                    dict_player_name_id[k] =  {
-                        'player_name' : player_name,
-                        'player_id' : player_id
-                        }
+                    if is_new_player(player_name, player_id):
+                        dict_player_name_id[k] =  {
+                            'player_name' : player_name,
+                            'player_id' : player_id
+                            }
+                        k += 1
 
-                    k += 1
+                except KeyError as e:
+                    print(f"Error accessing: {e}")
+                    continue
 
     return dict_player_name_id
 
