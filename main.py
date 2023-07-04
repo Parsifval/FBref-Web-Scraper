@@ -53,12 +53,13 @@ def get_players(urls: list) -> dict:
             player['player_name'] == player_name and player['player_id'] == player_id for player in dict_player_name_id.values()
             )
 
+    
+    k = 0
     for url in urls:
         req = get_request(url)
         comm = re.compile("<!--|-->") # Removes comments from HTML
         soup = BeautifulSoup(comm.sub("", req.text), 'lxml')
         td = soup.find_all('td')
-        k = 0
         for cell in td:
             if cell.attrs['data-stat'] == 'player':
                 try:
