@@ -13,6 +13,7 @@ def main():
         league_urls = league[1]
         match_list = get_matches(league_urls)
         write_to_pkl(match_list, league[0])
+        
 
 def get_matches(urls: list) -> dict:
     """
@@ -93,6 +94,7 @@ def get_request(url: str):
     
     print("Max retries reached")
     return None
+
 
 def write_to_pkl(to_write: dict, league: str) -> None:
     data = pd.DataFrame(to_write.values())
