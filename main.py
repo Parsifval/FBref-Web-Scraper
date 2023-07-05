@@ -75,7 +75,6 @@ def get_players(urls: list) -> dict:
 
                 except KeyError as e:
                     print(f"Error accessing: {e}")
-                    continue
 
     return dict_player_name_id
 
