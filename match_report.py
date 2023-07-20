@@ -21,14 +21,13 @@ def get_matches(urls: list) -> dict:
     and extracts links to match reports.
     """
     matches = {}
+    k = 0
     for url in urls:
         req = get_request(url)
-        req = requests.get(url)
         comm = re.compile("<!--|-->") # Not sure if this is necessary here
         soup = BeautifulSoup(comm.sub("", req.text), 'lxml')
         td = soup.find_all('td')
 
-        k = 0
         sub_dict = {"Date": None, "Home": None, "Score": None, "Away": None, "Referee": None}
         for cell in td:
             if cell.attrs['data-stat'] == "home_team":
@@ -60,7 +59,7 @@ def get_matches(urls: list) -> dict:
                 sub_dict = {"Date": None, "Home": None, "Score": None, "Away": None, "Referee": None}
 
         sleep(3)
-    
+
     return matches
 
 
@@ -98,7 +97,6 @@ def get_request(url: str):
 
 def write_to_pkl(to_write: dict, league: str) -> None:
     data = pd.DataFrame(to_write.values())
-    print(data.head())
     path = os.path.join("Match-Reports", f"{league}-match_reports.pkl")
     directory = os.path.dirname(path)
     os.makedirs(directory, exist_ok=True)
